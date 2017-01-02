@@ -111,11 +111,11 @@ class Log:
             exception_text = '{}: {}'.format(exception_class.__name__, exception_message)
         self.log('[EXCEPTION] {}'.format(exception_text), line_number=exception_traceback.tb_lineno, log_level=0)
 
-    def warning(self, exception_text: str):
-        self.log('[WARNING] {}'.format(exception_text), log_level=1)
+    def warning(self, log_text: str):
+        self.log('[WARNING] {}'.format(log_text), log_level=1)
 
-    def info(self, exception_text: str):
-        self.log('[INFO] {}'.format(exception_text), log_level=2)
+    def info(self, log_text: str):
+        self.log('[INFO] {}'.format(log_text), log_level=2)
 
 
 """
