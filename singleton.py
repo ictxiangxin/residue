@@ -4,10 +4,10 @@
 """
 
 
-def singleton(class_name, *args, **kwargs):
+def singleton(class_name):
     singleton_instances = {}
 
-    def _singleton():
+    def _singleton(*args, **kwargs):
         if class_name not in singleton_instances:
             singleton_instances[class_name] = class_name(*args, **kwargs)
         return singleton_instances[class_name]
