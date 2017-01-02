@@ -30,7 +30,7 @@ class Log:
         self._close_log_file()
         self.__log_path = log_path
         if self.__log_path:
-            self.__log_path_pointer = open(log_path, "a" if self.__append else "w", encoding="utf-8")
+            self.__log_path_pointer = open(log_path, 'a' if self.__append else 'w', encoding='utf-8')
 
     log_path = property(get_log_path, set_log_path)
 
@@ -62,12 +62,12 @@ class Log:
     def log(self, log_object, log_level: int=0, line_number: int=None):
         if log_level > self.__level:
             return
-        log_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        log_time = time.strftime('%Y-%m-%d %H:%M:%S')
         log_frame = inspect.currentframe().f_back
         log_code = log_frame.f_code
         caller = log_code.co_name
         filename = log_code.co_filename
-        if caller in ["error", "warning", "info", "exception"] and filename == log_frame.f_code.co_filename:
+        if caller in ['error', 'warning', 'info', 'exception'] and filename == log_frame.f_code.co_filename:
             log_frame = log_frame.f_back
             log_code = log_frame.f_code
             caller = log_code.co_name
@@ -76,9 +76,9 @@ class Log:
         code_line_number = log_frame.f_lineno if line_number is None else line_number
         log_object_string = str(log_object)
         if "\n" in log_object_string:
-            log_object_string = log_object_string.replace("\n", "\n\t")
-            log_object_string = "\n" + log_object_string + "\n"
-        log_string = "{}\t{}\t[{}: {}]\t<{}>\t{}\n".format(
+            log_object_string = log_object_string.replace('\n', '\n\t')
+            log_object_string = ''.join(['\n', log_object_string, '\n'])
+        log_string = '{}\t{}\t[{}: {}]\t<{}>\t{}\n'.format(
             log_time, filename, function_line_number, caller, code_line_number, log_object_string)
         if self.__buffer_size > 1:
             self.__log_buffer = log_string
@@ -91,21 +91,21 @@ class Log:
                 record_pointer = sys.stdout
             record_pointer.write(self.__log_buffer)
             record_pointer.flush()
-            self.__log_buffer = ""
+            self.__log_buffer = ''
 
     def error(self, log_text: str):
-        self.log("[ERROR] {}".format(log_text), log_level=0)
+        self.log('[ERROR] {}'.format(log_text), log_level=0)
 
     def exception(self, exception_text: str=None):
         exception_class, exception_message, exception_traceback = sys.exc_info()
         if exception_class is None or exception_traceback is None:
             return
         if exception_text is None:
-            exception_text = "{}: {}".format(exception_class.__name__, exception_message)
-        self.log("[EXCEPTION] {}".format(exception_text), line_number=exception_traceback.tb_lineno, log_level=0)
+            exception_text = '{}: {}'.format(exception_class.__name__, exception_message)
+        self.log('[EXCEPTION] {}'.format(exception_text), line_number=exception_traceback.tb_lineno, log_level=0)
 
     def warning(self, exception_text: str):
-        self.log("[WARNING] {}".format(exception_text), log_level=1)
+        self.log('[WARNING] {}'.format(exception_text), log_level=1)
 
     def info(self, exception_text: str):
-        self.log("[INFO] {}".format(exception_text), log_level=2)
+        self.log('[INFO] {}'.format(exception_text), log_level=2)
