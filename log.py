@@ -1,6 +1,13 @@
 import sys
 import time
 import inspect
+from singleton import singleton
+
+"""
+    Common Log tool
+        - Logging script information to file.
+        - Use GlobalLog() generate global(shared) log.
+"""
 
 
 class Log:
@@ -109,3 +116,14 @@ class Log:
 
     def info(self, exception_text: str):
         self.log('[INFO] {}'.format(exception_text), log_level=2)
+
+
+"""
+    Global log tool
+        - Generate singleton log as global log.
+"""
+
+
+@singleton
+class GlobalLog(Log):
+    pass
