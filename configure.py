@@ -2,6 +2,12 @@ import inspect
 from singleton import singleton
 
 
+"""
+    Common configure system
+        - Save configure information in one class object.
+"""
+
+
 class Configure:
     def __init__(self, configure: dict=None):
         self.__configure_map = {}
@@ -23,6 +29,12 @@ class Configure:
         if inspect.currentframe().f_back.f_code.co_name in self.__dir__():
             return object.__setattr__(self, key, value)
         self.__configure_map[key] = value
+
+
+"""
+    Global configure system
+        - Generate singleton configure as global configure.
+"""
 
 
 @singleton

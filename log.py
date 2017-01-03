@@ -4,7 +4,7 @@ import inspect
 from singleton import singleton
 
 """
-    Common Log tool
+    Common log tool
         - Logging script information to file.
         - Use GlobalLog() generate global(shared) log.
 """

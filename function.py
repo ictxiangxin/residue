@@ -1,5 +1,14 @@
 import time
+import inspect
+import functools
 from log import Log
+
+
+"""
+    Print function execute state
+        - Record function execute time and its arguments.
+        - Print records on screen.
+"""
 
 
 def state(function):
@@ -14,6 +23,12 @@ def state(function):
             print(output)
             return function_return
     return _state
+
+
+"""
+    Log function execute state
+        - Record function execute time and its arguments to Log.
+"""
 
 
 def state_log(log: Log=None):
@@ -35,6 +50,12 @@ def state_log(log: Log=None):
     return _state
 
 
+"""
+    Make function immortal
+        - Protect function avoid crash.
+"""
+
+
 def immortal(function):
     def _immortal(*args, **kwargs):
         try:
@@ -43,6 +64,13 @@ def immortal(function):
         except:
             pass
     return _immortal
+
+
+"""
+    Make function immortal and log the crash information
+        - Protect function avoid crash
+        - Log the crash information when function face a exception
+"""
 
 
 def immortal_log(log: Log=None):
@@ -56,3 +84,20 @@ def immortal_log(log: Log=None):
                     log.exception()
         return __immortal
     return _immortal
+
+
+"""
+    Transform function to higher-order function
+        - Function can invoke with non-total mode.
+"""
+
+
+def higher(function):
+    def _higher(*args, **kwargs):
+        keys = kwargs.keys()
+        _new_function = functools.partial(function, *args, **kwargs)
+        if set(inspect.signature(_new_function).parameters.keys()) - set(keys):
+            return _new_function
+        else:
+            return _new_function()
+    return _higher
