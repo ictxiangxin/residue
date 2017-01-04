@@ -69,7 +69,6 @@ class Log:
     def log(self, log_object, log_level: int=0, line_number: int=None):
         if log_level > self.__level:
             return
-        log_time = time.strftime('%Y-%m-%d %H:%M:%S')
         log_frame = inspect.currentframe().f_back
         log_code = log_frame.f_code
         caller = log_code.co_name
@@ -81,12 +80,16 @@ class Log:
             filename = log_code.co_filename
         function_line_number = log_code.co_firstlineno
         code_line_number = log_frame.f_lineno if line_number is None else line_number
+        self._record(log_object, filename, function_line_number, caller, code_line_number)
+
+    def _record(self, log_object, filename, function_line_number, caller, code_line_number):
+        log_time = time.strftime('%Y-%m-%d %H:%M:%S')
         log_object_string = str(log_object)
         if "\n" in log_object_string:
             log_object_string = log_object_string.replace('\n', '\n\t')
             log_object_string = ''.join(['\n', log_object_string, '\n'])
-        log_string = '{}\t{}\t[{}: {}]\t<{}>\t{}\n'.format(
-            log_time, filename, function_line_number, caller, code_line_number, log_object_string)
+        log_string = '{}\t{}\t[{} @ {}]\t<Line: {}>\t{}\n'.format(
+            log_time, filename, caller, function_line_number, code_line_number, log_object_string)
         if self.__buffer_size > 1:
             self.__log_buffer = log_string
         else:
@@ -116,6 +119,52 @@ class Log:
 
     def info(self, log_text: str):
         self.log('[INFO] {}'.format(log_text), log_level=2)
+
+    def watch(self, protect, with_arguments):
+        def _watch(function):
+            def __watch(*args, **kwargs):
+                log_frame = inspect.currentframe().f_back
+                log_code = log_frame.f_code
+                caller = log_code.co_name
+                filename = log_code.co_filename
+                function_line_number = log_code.co_firstlineno
+                code_line_number = log_frame.f_lineno
+                if with_arguments:
+                    arguments = ', '.join(str(arg) for arg in args) + \
+                                ', '.join('{}={}'.format(key, value) for key, value in kwargs.items())
+                else:
+                    arguments = ''
+                start_time = time.time()
+                try:
+                    function_return = function(*args, **kwargs)
+                except:
+                    exception_class, exception_message, exception_traceback = sys.exc_info()
+                    exception_frame = exception_traceback.tb_next.tb_frame
+                    exception_code = log_frame.f_code
+                    exception_caller = exception_code.co_name
+                    exception_filename = exception_code.co_filename
+                    exception_function_line_number = exception_code.co_firstlineno
+                    exception_code_line_number = exception_frame.f_lineno
+                    exception_text = '{}: {}'.format(exception_class.__name__, exception_message)
+                    self._record('[EXCEPTION] {}'.format(exception_text),
+                                 exception_filename,
+                                 exception_function_line_number,
+                                 exception_caller,
+                                 exception_code_line_number)
+                    if not protect:
+                        raise
+                    end_time = time.time()
+                    pass_time = end_time - start_time
+                    log_text = '[WATCH] <FAIL> *Aborting {:.2f}ms* {}({})'.format(pass_time, function.__name__, arguments)
+                    function_return = None
+                else:
+                    end_time = time.time()
+                    pass_time = end_time - start_time
+                    log_text = '[WATCH] <OK> *Running {:.2f}ms* {}({})'.format(pass_time, function.__name__, arguments)
+                self._record(log_text, filename, function_line_number, caller, code_line_number)
+                return function_return
+            return __watch
+        return _watch
 
 
 """
