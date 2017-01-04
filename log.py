@@ -19,6 +19,8 @@ class Log:
         self.__level = level
         self.__log_path = None
         self.set_log_path(log_path)
+        self.watch = self.flexible_watch(False, True)
+        self.guard = self.flexible_watch(True, True)
 
     def _close_log_file(self):
         if self.__log_path_pointer is not None:
@@ -120,7 +122,7 @@ class Log:
     def info(self, log_text: str):
         self.log('[INFO] {}'.format(log_text), log_level=2)
 
-    def watch(self, protect, with_arguments):
+    def flexible_watch(self, protect, with_arguments):
         def _watch(function):
             def __watch(*args, **kwargs):
                 log_frame = inspect.currentframe().f_back
@@ -140,7 +142,7 @@ class Log:
                 except:
                     exception_class, exception_message, exception_traceback = sys.exc_info()
                     exception_frame = exception_traceback.tb_next.tb_frame
-                    exception_code = log_frame.f_code
+                    exception_code = exception_frame.f_code
                     exception_caller = exception_code.co_name
                     exception_filename = exception_code.co_filename
                     exception_function_line_number = exception_code.co_firstlineno
@@ -155,16 +157,30 @@ class Log:
                         raise
                     end_time = time.time()
                     pass_time = end_time - start_time
-                    log_text = '[WATCH] <FAIL> *Aborting {:.2f}ms* {}({})'.format(pass_time, function.__name__, arguments)
+                    log_text = '[WATCH] <FAIL> {:.2f}ms {}({})'.format(pass_time, function.__name__, arguments)
                     function_return = None
                 else:
                     end_time = time.time()
                     pass_time = end_time - start_time
-                    log_text = '[WATCH] <OK> *Running {:.2f}ms* {}({})'.format(pass_time, function.__name__, arguments)
+                    log_text = '[WATCH] <OK> {:.2f}ms {}({})'.format(pass_time, function.__name__, arguments)
                 self._record(log_text, filename, function_line_number, caller, code_line_number)
                 return function_return
             return __watch
         return _watch
+
+    def message(self, message_text: str):
+        def _message(function):
+            def __message(*args, **kwargs):
+                log_frame = inspect.currentframe().f_back
+                log_code = log_frame.f_code
+                caller = log_code.co_name
+                filename = log_code.co_filename
+                function_line_number = log_code.co_firstlineno
+                code_line_number = log_frame.f_lineno
+                self._record(message_text, filename, function_line_number, caller, code_line_number)
+                return function(*args, **kwargs)
+            return __message
+        return _message
 
 
 """
