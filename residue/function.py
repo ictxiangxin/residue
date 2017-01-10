@@ -33,8 +33,7 @@ def state(function):
 def immortal(function):
     def _immortal(*args, **kwargs):
         try:
-            function_return = function(*args, **kwargs)
-            return function_return
+            return function(*args, **kwargs)
         except:
             pass
     return _immortal
@@ -48,10 +47,9 @@ def immortal(function):
 
 def higher(function):
     def _higher(*args, **kwargs):
-        keys = kwargs.keys()
         _new_function = functools.partial(function, *args, **kwargs)
-        if set(inspect.signature(_new_function).parameters.keys()) - set(keys):
-            return _new_function
+        if set(inspect.signature(_new_function).parameters.keys()) - set(kwargs.keys()):
+            return higher(_new_function)
         else:
             return _new_function()
     return _higher

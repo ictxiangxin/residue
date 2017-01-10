@@ -1,5 +1,5 @@
 import inspect
-from singleton import singleton
+from residue.object import singleton
 
 
 """
