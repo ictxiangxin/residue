@@ -4,7 +4,7 @@ from setuptools import setup, find_packages
 
 if __name__ == '__main__':
     if not (sys.version[0] >= '3' and sys.version[2] >= '5'):
-        raise SystemError("Python version must >= 3.4. Your python version is {}".format(sys.version))
+        raise SystemError("Python version must >= 3.5. Your python version is {}".format(sys.version))
     setup(
         name='residue',
         version='0.1',
