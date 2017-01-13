@@ -27,13 +27,19 @@ class Log:
         self._close_log_file()
 
     def _close_log_file(self):
-        if self.__log_path_pointer is not sys.stdout:
-            self._write_back_buffer()
-            self.__log_path_pointer.close()
+        try:
+            if self.__log_path_pointer is not sys.stdout:
+                self._write_back_buffer()
+                self.__log_path_pointer.close()
+        finally:
+            self.__log_path_pointer = sys.stdout
 
     def _write_back_buffer(self):
-        self.__log_path_pointer.write(self.__log_buffer)
-        self.__log_buffer = ""
+        try:
+            self.__log_path_pointer.write(self.__log_buffer)
+            self.__log_buffer = ""
+        except:
+            self._close_log_file()
 
     def get_log_path(self):
         return self.__log_path
@@ -42,7 +48,10 @@ class Log:
         self._close_log_file()
         self.__log_path = log_path
         if self.__log_path:
-            self.__log_path_pointer = open(log_path, 'a' if self.__append else 'w', encoding='utf-8')
+            try:
+                self.__log_path_pointer = open(log_path, 'a' if self.__append else 'w', encoding='utf-8')
+            except:
+                self.__log_path_pointer = sys.stdout
         else:
             self.__log_path_pointer = sys.stdout
 
@@ -77,34 +86,31 @@ class Log:
         if log_level > self.__level:
             return
         log_frame = inspect.currentframe().f_back
-        log_code = log_frame.f_code
-        caller = log_code.co_name
-        filename = log_code.co_filename
+        log_code, caller, filename, function_line_number = self._get_frame_info(log_frame)
         if caller in ['error', 'warning', 'info', 'exception'] and filename == log_frame.f_code.co_filename:
-            log_frame = log_frame.f_back
-            log_code = log_frame.f_code
-            caller = log_code.co_name
-            filename = log_code.co_filename
-        function_line_number = log_code.co_firstlineno
+            log_code, caller, filename, function_line_number = self._get_frame_info(log_frame.f_back)
         code_line_number = log_frame.f_lineno if line_number is None else line_number
         self._record(log_object, filename, function_line_number, caller, code_line_number)
 
     def _record(self, log_object, filename, function_line_number, caller, code_line_number):
-        log_time = time.strftime('%Y-%m-%d %H:%M:%S')
-        log_object_string = str(log_object)
-        if "\n" in log_object_string:
-            log_object_string = log_object_string.replace('\n', '\n\t')
-            log_object_string = ''.join(['\n', log_object_string, '\n'])
-        log_string = '{}\t{}\t[{} @ {}]\t<Line: {}>\t{}\n'.format(
-            log_time, filename, caller, function_line_number, code_line_number, log_object_string)
-        if self.__buffer_size > 1:
-            self.__log_buffer = log_string
-        else:
-            self.__log_buffer += log_string
-        if len(self.__log_buffer) >= self.buffer_size:
-            self.__log_path_pointer.write(self.__log_buffer)
-            self.__log_path_pointer.flush()
-            self.__log_buffer = ''
+        try:
+            log_time = time.strftime('%Y-%m-%d %H:%M:%S')
+            log_object_string = str(log_object)
+            if "\n" in log_object_string:
+                log_object_string = log_object_string.replace('\n', '\n\t')
+                log_object_string = ''.join(['\n', log_object_string, '\n'])
+            log_string = '{}\t{}\t[{} @ {}]\t<Line: {}>\t{}\n'.format(
+                log_time, filename, caller, function_line_number, code_line_number, log_object_string)
+            if self.__buffer_size > 1:
+                self.__log_buffer = log_string
+            else:
+                self.__log_buffer += log_string
+            if len(self.__log_buffer) >= self.buffer_size:
+                self.__log_path_pointer.write(self.__log_buffer)
+                self.__log_path_pointer.flush()
+                self.__log_buffer = ''
+        except:
+            self._close_log_file()
 
     def error(self, log_text: str):
         self.log('[ERROR] {}'.format(log_text), log_level=0)
@@ -144,7 +150,10 @@ class Log:
                         function_return = function(*args, **kwargs)
                     except:
                         exception_class, exception_message, exception_traceback = sys.exc_info()
-                        exception_frame = exception_traceback.tb_next.tb_frame
+                        if exception_traceback.tb_next is None:
+                            exception_frame = exception_traceback.tb_frame
+                        else:
+                            exception_frame = exception_traceback.tb_next.tb_frame
                         exception_code = exception_frame.f_code
                         exception_caller = exception_code.co_name
                         exception_filename = exception_code.co_filename
@@ -177,6 +186,20 @@ class Log:
                 return function_return
             return __watch
         return _watch
+
+    @staticmethod
+    def _get_frame_info(frame):
+        frame_code = '<Unknown>'
+        caller = '<Unknown>'
+        filename = '<Unknown>'
+        function_line_number = '<Unknown>'
+        try:
+            frame_code = frame.f_code
+            caller = frame_code.co_name
+            filename = frame_code.co_filename
+            function_line_number = frame_code.co_firstlineno
+        finally:
+            return frame_code, caller, filename, function_line_number
 
 
 """
