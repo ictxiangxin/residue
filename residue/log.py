@@ -21,6 +21,8 @@ class Log:
         self.set_log_path(log_path)
         self.watch = self.flexible_watch(False, True, 2)
         self.guard = self.flexible_watch(True, True, 2)
+        self.simple_watch = self.flexible_watch(False, False, 2)
+        self.simple_guard = self.flexible_watch(True, False, 2)
 
     def __del__(self):
         self._write_back_buffer()
